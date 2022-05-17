@@ -25,6 +25,7 @@ module "access_logs" {
 }
 
 resource "aws_lb" "default" {
+  count = module.this.enabled ? 1 : 0
   #bridgecrew:skip=BC_AWS_NETWORKING_41 - Skipping `Ensure that ALB drops HTTP headers` check. Only valid for Load Balancers of type application.
   name               = module.this.id
   tags               = module.this.tags
@@ -49,9 +50,11 @@ module "default_target_group_label" {
   attributes = ["default"]
 
   context = module.this.context
+  enabled = module.this.enabled && var.create_default_target_group
 }
 
 resource "aws_lb_target_group" "default" {
+  count                = module.default_target_group_label.enabled ? 1 : 0
   name                 = var.target_group_name == "" ? module.default_target_group_label.id : var.target_group_name
   port                 = var.target_group_port
   protocol             = local.target_group_protocol
@@ -84,20 +87,20 @@ resource "aws_lb_target_group" "default" {
 }
 
 resource "aws_lb_listener" "default" {
-  count             = var.tcp_enabled ? 1 : (var.udp_enabled ? 1 : 0)
-  load_balancer_arn = aws_lb.default.arn
+  count             = module.default_target_group_label.enabled && var.tcp_enabled ? 1 : (module.default_target_group_label.enabled && var.udp_enabled ? 1 : 0)
+  load_balancer_arn = aws_lb.default[0].arn
   port              = local.listener_port
   protocol          = local.listener_proto
 
   default_action {
-    target_group_arn = aws_lb_target_group.default.arn
+    target_group_arn = aws_lb_target_group.default[0].arn
     type             = "forward"
   }
 }
 
 resource "aws_lb_listener" "tls" {
-  count             = var.tls_enabled ? 1 : 0
-  load_balancer_arn = aws_lb.default.arn
+  count             = module.default_target_group_label.enabled && var.tls_enabled ? 1 : 0
+  load_balancer_arn = aws_lb.default[0].arn
 
   port            = var.tls_port
   protocol        = "TLS"
@@ -105,7 +108,7 @@ resource "aws_lb_listener" "tls" {
   certificate_arn = var.certificate_arn
 
   default_action {
-    target_group_arn = aws_lb_target_group.default.arn
+    target_group_arn = aws_lb_target_group.default[0].arn
     type             = "forward"
   }
 }

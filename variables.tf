@@ -1,3 +1,10 @@
+variable "create_default_target_group" {
+  type    = bool
+  default = true
+}
+
+
+
 variable "vpc_id" {
   type        = string
   description = "VPC ID to associate with NLB"
