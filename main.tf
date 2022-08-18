@@ -7,28 +7,11 @@ locals {
   health_check_protocol = coalesce(var.health_check_protocol, local.target_group_protocol)
 }
 
-module "access_logs" {
-  source  = "cloudposse/lb-s3-bucket/aws"
-  version = "0.12.0"
-
-  enabled                            = module.this.enabled && var.access_logs_enabled && var.access_logs_s3_bucket_id == null
-  lifecycle_rule_enabled             = var.lifecycle_rule_enabled
-  enable_glacier_transition          = var.enable_glacier_transition
-  expiration_days                    = var.expiration_days
-  glacier_transition_days            = var.glacier_transition_days
-  noncurrent_version_expiration_days = var.noncurrent_version_expiration_days
-  noncurrent_version_transition_days = var.noncurrent_version_transition_days
-  standard_transition_days           = var.standard_transition_days
-  force_destroy                      = var.nlb_access_logs_s3_bucket_force_destroy
-
-  context = module.this.context
-}
-
 resource "aws_lb" "default" {
-  count = module.this.enabled ? 1 : 0
+  count = module.context.enabled ? 1 : 0
   #bridgecrew:skip=BC_AWS_NETWORKING_41 - Skipping `Ensure that ALB drops HTTP headers` check. Only valid for Load Balancers of type application.
-  name               = module.this.id
-  tags               = module.this.tags
+  name               = module.context.id
+  tags               = module.context.tags
   internal           = var.internal
   load_balancer_type = "network"
 
@@ -38,19 +21,19 @@ resource "aws_lb" "default" {
   enable_deletion_protection       = var.deletion_protection_enabled
 
   access_logs {
-    bucket  = try(element(compact([var.access_logs_s3_bucket_id, module.access_logs.bucket_id]), 0), "")
+    bucket  = var.access_logs_s3_bucket_id
     prefix  = var.access_logs_prefix
     enabled = var.access_logs_enabled
   }
 }
 
 module "default_target_group_label" {
-  source     = "cloudposse/label/null"
-  version    = "0.25.0"
+  source  = "app.terraform.io/SevenPico/context/null"
+  version = "1.0.1"
   attributes = ["default"]
 
-  context = module.this.context
-  enabled = module.this.enabled && var.create_default_target_group
+  context = module.context.context
+  enabled = module.context.enabled && var.create_default_target_group
 }
 
 resource "aws_lb_target_group" "default" {
