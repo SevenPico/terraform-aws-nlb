@@ -29,10 +29,10 @@ resource "aws_lb" "default" {
 
 module "default_target_group_label" {
   source  = "app.terraform.io/SevenPico/context/null"
-  version = "1.0.1"
+  version = "1.0.2"
   attributes = ["default"]
 
-  context = module.context.context
+  context = module.context.self
   enabled = module.context.enabled && var.create_default_target_group
 }
 
