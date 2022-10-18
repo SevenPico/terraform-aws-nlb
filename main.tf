@@ -20,10 +20,22 @@ resource "aws_lb" "default" {
   ip_address_type                  = var.ip_address_type
   enable_deletion_protection       = var.deletion_protection_enabled
 
-  access_logs {
-    bucket  = var.access_logs_s3_bucket_id
-    prefix  = var.access_logs_prefix
-    enabled = var.access_logs_enabled
+  dynamic "tag" {
+    for_each = keys(module.context.tags)
+    content {
+      key                 = tag.value
+      value               = module.context.tags[tag.value]
+      propagate_at_launch = true
+    }
+  }
+
+  dynamic "access_logs" {
+    for_each = var.access_logs_s3_bucket_id != null ? [var.access_logs_s3_bucket_id] : []
+    content {
+      bucket  = var.access_logs_s3_bucket_id
+      prefix  = var.access_logs_prefix
+      enabled = var.access_logs_enabled
+    }
   }
 }
 
