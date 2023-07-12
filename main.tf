@@ -31,8 +31,8 @@ resource "aws_lb" "default" {
 }
 
 module "default_target_group_label" {
-  source  = "SevenPico/context/null"
-  version = "2.0.0"
+  source     = "SevenPico/context/null"
+  version    = "2.0.0"
   attributes = ["default"]
 
   context = module.context.self

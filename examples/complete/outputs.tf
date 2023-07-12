@@ -53,7 +53,7 @@ output "listener_arns" {
   value       = module.nlb.listener_arns
 }
 
-output "access_logs_bucket_id" {
-  description = "The S3 bucket ID for access logs"
-  value       = module.nlb.access_logs_bucket_id
-}
+#output "access_logs_bucket_id" {
+#  description = "The S3 bucket ID for access logs"
+#  value       = module.nlb.access_logs_bucket_id
+#}
